@@ -36,10 +36,14 @@
                         </li>
                         @if (User.Identity.IsAuthenticated)
                         {
+
                             <li class="nav-item">
-                                你好！@User.Identity.Name,
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">Logout</a>
+                                <form asp-action="Logout" asp-controller="Account" method="post">
+                                    <a title="Welcome" asp-controller="Home" asp-action="Index">你好！@User.Identity.Name,</a>
+                                    <button type="submit" class="btn btn-link navbar-brand">Log out</button>
+                                </form>
                             </li>
+
                         }
                         else
                         {

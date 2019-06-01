@@ -60,7 +60,8 @@ namespace Admin.Controllers
 
         public IActionResult Logout()
         {
-            HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            _signInManager.SignOutAsync();
+            // HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Index", "Home");
         }
     }
