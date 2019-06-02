@@ -20,40 +20,73 @@ namespace Admin.Controllers
             _userManager = userManager;
             _signInManager = signInManager;
         }
-
-        public IActionResult Login()
+        private IActionResult RedirectToLoacl(string returnUrl)
         {
-            return View();
-        }
-        [HttpPost]
-        public async Task<IActionResult> Login(RegisterViewModel register)
-        {
-            var user = await _userManager.FindByEmailAsync(register.Email);
-            if (user == null)
+            if (Url.IsLocalUrl(returnUrl))
             {
-
+                return Redirect(returnUrl);
             }
-            await _signInManager.SignInAsync(user, new AuthenticationProperties { IsPersistent = true });
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction(nameof(HomeController.Index), "Home");
         }
-        public IActionResult Register()
+        private void AddErrors(IdentityResult identityResult)
         {
+            if (identityResult != null && identityResult.Errors.Count() > 0)
+            {
+                foreach (var item in identityResult.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, item.Description);
+                }
+            }
+        }
+        public IActionResult Login(string returnUrl = null)
+        {
+            ViewData["returnUrl"] = returnUrl;
             return View();
         }
         [HttpPost]
-        public async Task<IActionResult> Register(RegisterViewModel register)
+        public async Task<IActionResult> Login(LoginViewModel register, string returnUrl = null)
         {
-            var identityUser = new ApplicationUser
+            if (ModelState.IsValid)
             {
-                Email = register.Email,
-                UserName = register.Email,
-                NormalizedUserName = register.Email,
-            };
-            var identityResult = await _userManager.CreateAsync(identityUser, register.Password);
-            if (identityResult.Succeeded)
+                ViewData["returnUrl"] = returnUrl;
+                var user = await _userManager.FindByEmailAsync(register.Email);
+                if (user == null)
+                {
+
+                }
+                await _signInManager.SignInAsync(user, new AuthenticationProperties { IsPersistent = true });
+                return RedirectToLoacl(returnUrl);
+            }
+
+            return View();
+        }
+        public IActionResult Register(string returnUrl = null)
+        {
+            ViewData["returnUrl"] = returnUrl;
+            return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> Register(RegisterViewModel register, string returnUrl = null)
+        {
+            if (ModelState.IsValid)
             {
-                await _signInManager.SignInAsync(identityUser, new AuthenticationProperties { IsPersistent = true });
-                return RedirectToAction("Index", "Home");
+                ViewData["returnUrl"] = returnUrl;
+                var identityUser = new ApplicationUser
+                {
+                    Email = register.Email,
+                    UserName = register.Email,
+                    NormalizedUserName = register.Email,
+                };
+                var identityResult = await _userManager.CreateAsync(identityUser, register.Password);
+                if (identityResult.Succeeded)
+                {
+                    await _signInManager.SignInAsync(identityUser, new AuthenticationProperties { IsPersistent = true });
+                    return RedirectToLoacl(returnUrl);
+                }
+                else
+                {
+                    AddErrors(identityResult);
+                }
             }
             return View();
         }

@@ -7,6 +7,8 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using Admin.Data;
 
 namespace Admin
 {
@@ -14,7 +16,10 @@ namespace Admin
     {
         public static void Main(string[] args)
         {
-            CreateWebHostBuilder(args).Build().Run();
+            CreateWebHostBuilder(args).Build().MigratDbContext<ApplicationDbContext>((contex, serverPropert) =>
+            {
+                new ApplicationDbContextSeed().SeedAsync(contex, serverPropert).Wait();
+            }).Run();
         }
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
