@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Admin.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using IdentityServer4;
 
 namespace Admin
 {
@@ -28,31 +29,38 @@ namespace Admin
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<ApplicationDbContext>(options =>
-            {
-                options.UseMySql(Configuration.GetConnectionString("DefaultConnection"));
-            });
-            services.AddIdentity<ApplicationUser, ApplicationUserRole>()
-                .AddEntityFrameworkStores<ApplicationDbContext>()
-                .AddDefaultTokenProviders();
-            //services.Configure<CookiePolicyOptions>(options =>
-            //{
-            //    // This lambda determines whether user consent for non-essential cookies is needed for a given request.
-            //    options.CheckConsentNeeded = context => true;
-            //    options.MinimumSameSitePolicy = SameSiteMode.None;
-            //});
-            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(options =>
-                {
-                    options.LoginPath = "/Account/Login";
-                });
+            services.AddIdentityServer()
+                .AddDeveloperSigningCredential()// 临时证书
+                .AddInMemoryClients(Config.GetClients())// 添加内存客户端
+                .AddInMemoryApiResources(Config.GetApiResources())// 添加内存API资源
+                .AddInMemoryIdentityResources(Config.GetIdentityResources())// 添加内存标识资源
+                .AddTestUsers(Config.GetTestUsers());// 添加测试用户
 
-            services.Configure<IdentityOptions>(options =>
-            {
-                options.Password.RequireLowercase = false;
-                options.Password.RequireNonAlphanumeric = false;
-                options.Password.RequireUppercase = false;
-            });
+            //services.AddDbContext<ApplicationDbContext>(options =>
+            //{
+            //    options.UseMySql(Configuration.GetConnectionString("DefaultConnection"));
+            //});
+            //services.AddIdentity<ApplicationUser, ApplicationUserRole>()
+            //    .AddEntityFrameworkStores<ApplicationDbContext>()
+            //    .AddDefaultTokenProviders();
+            ////services.Configure<CookiePolicyOptions>(options =>
+            ////{
+            ////    // This lambda determines whether user consent for non-essential cookies is needed for a given request.
+            ////    options.CheckConsentNeeded = context => true;
+            ////    options.MinimumSameSitePolicy = SameSiteMode.None;
+            ////});
+            //services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            //    .AddCookie(options =>
+            //    {
+            //        options.LoginPath = "/Account/Login";
+            //    });
+
+            //services.Configure<IdentityOptions>(options =>
+            //{
+            //    options.Password.RequireLowercase = false;
+            //    options.Password.RequireNonAlphanumeric = false;
+            //    options.Password.RequireUppercase = false;
+            //});
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
@@ -71,7 +79,8 @@ namespace Admin
 
             app.UseStaticFiles();
             //app.UseCookiePolicy();
-            app.UseAuthentication();
+            //app.UseAuthentication();
+            app.UseIdentityServer();
             app.UseMvc(routes =>
             {
                 routes.MapRoute(

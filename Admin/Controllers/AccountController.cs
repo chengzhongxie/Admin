@@ -7,19 +7,27 @@ using Admin.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using IdentityServer4.Test;
 
 namespace Admin.Controllers
 {
     public class AccountController : Controller
     {
-        private UserManager<ApplicationUser> _userManager;
-        private SignInManager<ApplicationUser> _signInManager;
+        private readonly TestUserStore _testUserStore;
 
-        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+        public AccountController(TestUserStore testUserStore)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
+            _testUserStore = testUserStore;
         }
+
+        //private UserManager<ApplicationUser> _userManager;
+        //private SignInManager<ApplicationUser> _signInManager;
+
+        //public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+        //{
+        //    _userManager = userManager;
+        //    _signInManager = signInManager;
+        //}
         private IActionResult RedirectToLoacl(string returnUrl)
         {
             if (Url.IsLocalUrl(returnUrl))
@@ -49,14 +57,40 @@ namespace Admin.Controllers
             if (ModelState.IsValid)
             {
                 ViewData["returnUrl"] = returnUrl;
-                var user = await _userManager.FindByEmailAsync(register.Email);
+                var user = _testUserStore.FindByUsername(register.Email);// 查找用户
                 if (user == null)
                 {
-
+                    ModelState.AddModelError(nameof(register.Email), "用户不存在！");
                 }
-                await _signInManager.SignInAsync(user, new AuthenticationProperties { IsPersistent = true });
-                return RedirectToLoacl(returnUrl);
+                else
+                {
+                    if (_testUserStore.ValidateCredentials(register.Email, register.Password))// 验证用户和密码
+                    {
+                        var props = new AuthenticationProperties()
+                        {
+                            IsPersistent = true,
+                            ExpiresUtc = DateTimeOffset.UtcNow.Add(TimeSpan.FromMinutes(30))
+                        };
+                        await Microsoft.AspNetCore.Http.AuthenticationManagerExtensions.SignInAsync(HttpContext, user.SubjectId, user.Username, props);
+                        return RedirectToLoacl(returnUrl);
+                    }
+                    else
+                    {
+                        ModelState.AddModelError(nameof(register.Password), "密码错误！");
+                    }
+                }
             }
+            //if (ModelState.IsValid)
+            //{
+            //    ViewData["returnUrl"] = returnUrl;
+            //    var user = await _userManager.FindByEmailAsync(register.Email);
+            //    if (user == null)
+            //    {
+
+            //    }
+            //    await _signInManager.SignInAsync(user, new AuthenticationProperties { IsPersistent = true });
+            //    return RedirectToLoacl(returnUrl);
+            //}
 
             return View();
         }
@@ -68,33 +102,33 @@ namespace Admin.Controllers
         [HttpPost]
         public async Task<IActionResult> Register(RegisterViewModel register, string returnUrl = null)
         {
-            if (ModelState.IsValid)
-            {
-                ViewData["returnUrl"] = returnUrl;
-                var identityUser = new ApplicationUser
-                {
-                    Email = register.Email,
-                    UserName = register.Email,
-                    NormalizedUserName = register.Email,
-                };
-                var identityResult = await _userManager.CreateAsync(identityUser, register.Password);
-                if (identityResult.Succeeded)
-                {
-                    await _signInManager.SignInAsync(identityUser, new AuthenticationProperties { IsPersistent = true });
-                    return RedirectToLoacl(returnUrl);
-                }
-                else
-                {
-                    AddErrors(identityResult);
-                }
-            }
+            //if (ModelState.IsValid)
+            //{
+            //    ViewData["returnUrl"] = returnUrl;
+            //    var identityUser = new ApplicationUser
+            //    {
+            //        Email = register.Email,
+            //        UserName = register.Email,
+            //        NormalizedUserName = register.Email,
+            //    };
+            //    var identityResult = await _userManager.CreateAsync(identityUser, register.Password);
+            //    if (identityResult.Succeeded)
+            //    {
+            //        await _signInManager.SignInAsync(identityUser, new AuthenticationProperties { IsPersistent = true });
+            //        return RedirectToLoacl(returnUrl);
+            //    }
+            //    else
+            //    {
+            //        AddErrors(identityResult);
+            //    }
+            //}
             return View();
         }
 
         public IActionResult Logout()
         {
-            _signInManager.SignOutAsync();
-            // HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            //_signInManager.SignOutAsync();
+            HttpContext.SignOutAsync();
             return RedirectToAction("Index", "Home");
         }
     }

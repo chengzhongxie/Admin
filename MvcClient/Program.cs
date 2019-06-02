@@ -7,21 +7,14 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using Admin.Data;
 
-namespace Admin
+namespace MvcClient
 {
     public class Program
     {
         public static void Main(string[] args)
         {
-            CreateWebHostBuilder(args).Build()
-            //    .MigratDbContext<ApplicationDbContext>((contex, serverPropert) =>
-            //{
-            //    new ApplicationDbContextSeed().SeedAsync(contex, serverPropert).Wait();
-            //})
-            .Run();
+            CreateWebHostBuilder(args).Build().Run();
         }
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
