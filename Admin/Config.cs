@@ -27,7 +27,7 @@ namespace Admin
                     ClientId="MVC",
                     AllowedGrantTypes=GrantTypes.Implicit,
                     ClientSecrets={new Secret("secret".Sha256())},
-                    RequireConsent=false,
+                    RequireConsent=true,
                     RedirectUris={"http://localhost:5001/signin-oidc" },
                     PostLogoutRedirectUris={ "http://localhost:5001/signout-callback-oidc" },
                     AllowedScopes={
