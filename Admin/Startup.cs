@@ -16,6 +16,10 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using IdentityServer4;
 using IdentityServer4.Services;
 using Admin.Services;
+using IdentityServer4.EntityFramework;
+using System.Reflection;
+using IdentityServer4.EntityFramework.DbContexts;
+using IdentityServer4.EntityFramework.Mappers;
 
 namespace Admin
 {
@@ -31,10 +35,12 @@ namespace Admin
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            string SqlConnection = Configuration.GetConnectionString("DefaultConnection");
             services.AddDbContext<ApplicationDbContext>(options =>
             {
-                options.UseMySql(Configuration.GetConnectionString("DefaultConnection"));
+                options.UseMySql(SqlConnection);
             });
+            var migrationAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
             services.AddIdentity<ApplicationUser, ApplicationUserRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -42,12 +48,26 @@ namespace Admin
 
             services.AddIdentityServer()
                 .AddDeveloperSigningCredential()// 临时证书
-                .AddInMemoryClients(Config.GetClients())// 添加内存客户端
-                .AddInMemoryApiResources(Config.GetApiResources())// 添加内存API资源
-                .AddInMemoryIdentityResources(Config.GetIdentityResources())// 添加内存标识资源
-                                                                            // .AddTestUsers(Config.GetTestUsers());// 添加测试用户
+                                                //.AddInMemoryClients(Config.GetClients())// 添加内存客户端
+                                                //.AddInMemoryApiResources(Config.GetApiResources())// 添加内存API资源
+                                                //.AddInMemoryIdentityResources(Config.GetIdentityResources())// 添加内存标识资源
+                                                //.AddTestUsers(Config.GetTestUsers());// 添加测试用户
+                .AddConfigurationStore(options =>
+                {
+                    options.ConfigureDbContext = builder =>
+                    {
+                        builder.UseMySql(SqlConnection, sql => sql.MigrationsAssembly(migrationAssembly));
+                    };
+                })
+                .AddOperationalStore(options =>
+                {
+                    options.ConfigureDbContext = builder =>
+                    {
+                        builder.UseMySql(SqlConnection, sql => sql.MigrationsAssembly(migrationAssembly));
+                    };
+                })
                .AddAspNetIdentity<ApplicationUser>()
-               .Services.AddScoped<IProfileService,ProfileService>();
+               .Services.AddScoped<IProfileService, ProfileService>();
 
 
             ////services.Configure<CookiePolicyOptions>(options =>
@@ -89,6 +109,9 @@ namespace Admin
             //app.UseCookiePolicy();
             app.UseAuthentication();
             app.UseIdentityServer();
+
+            InitIdentityServerDataBase(app);
+
             app.UseMvc(routes =>
             {
                 routes.MapRoute(
@@ -96,6 +119,37 @@ namespace Admin
                      template: "{controller=Home}/{action=Index}/{id?}");
                 //template: "{controller=Account}/{action=Register}/{id?}");
             });
+        }
+
+        public void InitIdentityServerDataBase(IApplicationBuilder app)
+        {
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                scope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.Migrate();
+                var configurationDbContext = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
+                if (!configurationDbContext.Clients.Any())
+                {
+                    foreach (var item in Config.GetClients())
+                    {
+                        configurationDbContext.Clients.Add(item.ToEntity());
+                    }
+                }
+                if (!configurationDbContext.ApiResources.Any())
+                {
+                    foreach (var item in Config.GetApiResources())
+                    {
+                        configurationDbContext.ApiResources.Add(item.ToEntity());
+                    }
+                }
+                if (!configurationDbContext.IdentityResources.Any())
+                {
+                    foreach (var item in Config.GetIdentityResources())
+                    {
+                        configurationDbContext.IdentityResources.Add(item.ToEntity());
+                    }
+                }
+                configurationDbContext.SaveChanges();
+            }
         }
     }
 }

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
+
 namespace MvcClient
 {
     public class Startup
@@ -84,5 +85,7 @@ namespace MvcClient
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
         }
+
+     
     }
 }
