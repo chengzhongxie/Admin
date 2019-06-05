@@ -3,31 +3,35 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Admin.Models;
+using Admin.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using IdentityServer4.Test;
+using IdentityServer4.Services;
+using Admin.Models;
 
 namespace Admin.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly TestUserStore _testUserStore;
+        //private readonly TestUserStore _testUserStore;
 
-        public AccountController(TestUserStore testUserStore)
-        {
-            _testUserStore = testUserStore;
-        }
-
-        //private UserManager<ApplicationUser> _userManager;
-        //private SignInManager<ApplicationUser> _signInManager;
-
-        //public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+        //public AccountController(TestUserStore testUserStore)
         //{
-        //    _userManager = userManager;
-        //    _signInManager = signInManager;
+        //    _testUserStore = testUserStore;
         //}
+
+        private UserManager<ApplicationUser> _userManager;
+        private SignInManager<ApplicationUser> _signInManager;
+        private IIdentityServerInteractionService _identityServer;
+
+        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IIdentityServerInteractionService identityServer)
+        {
+            _userManager = userManager;
+            _signInManager = signInManager;
+            _identityServer = identityServer;
+        }
         private IActionResult RedirectToLoacl(string returnUrl)
         {
             if (Url.IsLocalUrl(returnUrl))
@@ -57,22 +61,31 @@ namespace Admin.Controllers
             if (ModelState.IsValid)
             {
                 ViewData["returnUrl"] = returnUrl;
-                var user = _testUserStore.FindByUsername(register.Email);// 查找用户
+                var user = await _userManager.FindByEmailAsync(register.Email);// 查找用户
                 if (user == null)
                 {
                     ModelState.AddModelError(nameof(register.Email), "用户不存在！");
                 }
                 else
                 {
-                    if (_testUserStore.ValidateCredentials(register.Email, register.Password))// 验证用户和密码
+                    if (await _userManager.CheckPasswordAsync(user, register.Password))// 验证用户和密码
                     {
-                        var props = new AuthenticationProperties()
+                        AuthenticationProperties props = null;
+                        if (register.RememBerMe)
                         {
-                            IsPersistent = true,
-                            ExpiresUtc = DateTimeOffset.UtcNow.Add(TimeSpan.FromMinutes(30))
-                        };
-                        await Microsoft.AspNetCore.Http.AuthenticationManagerExtensions.SignInAsync(HttpContext, user.SubjectId, user.Username, props);
-                        return RedirectToLoacl(returnUrl);
+                            props = new AuthenticationProperties()
+                            {
+                                IsPersistent = true,
+                                ExpiresUtc = DateTimeOffset.UtcNow.Add(TimeSpan.FromMinutes(30))
+                            };
+                        }
+                        await _signInManager.SignInAsync(user, props);
+                        if (_identityServer.IsValidReturnUrl(returnUrl))
+                        {
+                            return Redirect(returnUrl);
+                        }
+                        return Redirect("~/");
+                        //return RedirectToLoacl(returnUrl);
                     }
                     else
                     {
@@ -80,18 +93,6 @@ namespace Admin.Controllers
                     }
                 }
             }
-            //if (ModelState.IsValid)
-            //{
-            //    ViewData["returnUrl"] = returnUrl;
-            //    var user = await _userManager.FindByEmailAsync(register.Email);
-            //    if (user == null)
-            //    {
-
-            //    }
-            //    await _signInManager.SignInAsync(user, new AuthenticationProperties { IsPersistent = true });
-            //    return RedirectToLoacl(returnUrl);
-            //}
-
             return View();
         }
         public IActionResult Register(string returnUrl = null)
@@ -102,33 +103,33 @@ namespace Admin.Controllers
         [HttpPost]
         public async Task<IActionResult> Register(RegisterViewModel register, string returnUrl = null)
         {
-            //if (ModelState.IsValid)
-            //{
-            //    ViewData["returnUrl"] = returnUrl;
-            //    var identityUser = new ApplicationUser
-            //    {
-            //        Email = register.Email,
-            //        UserName = register.Email,
-            //        NormalizedUserName = register.Email,
-            //    };
-            //    var identityResult = await _userManager.CreateAsync(identityUser, register.Password);
-            //    if (identityResult.Succeeded)
-            //    {
-            //        await _signInManager.SignInAsync(identityUser, new AuthenticationProperties { IsPersistent = true });
-            //        return RedirectToLoacl(returnUrl);
-            //    }
-            //    else
-            //    {
-            //        AddErrors(identityResult);
-            //    }
-            //}
+            if (ModelState.IsValid)
+            {
+                ViewData["returnUrl"] = returnUrl;
+                var identityUser = new ApplicationUser
+                {
+                    Email = register.Email,
+                    UserName = register.Email,
+                    NormalizedUserName = register.Email,
+                };
+                var identityResult = await _userManager.CreateAsync(identityUser, register.Password);
+                if (identityResult.Succeeded)
+                {
+                    await _signInManager.SignInAsync(identityUser, new AuthenticationProperties { IsPersistent = true });
+                    return RedirectToLoacl(returnUrl);
+                }
+                else
+                {
+                    AddErrors(identityResult);
+                }
+            }
             return View();
         }
 
         public IActionResult Logout()
         {
-            //_signInManager.SignOutAsync();
-            HttpContext.SignOutAsync();
+            _signInManager.SignOutAsync();
+            // HttpContext.SignOutAsync();
             return RedirectToAction("Index", "Home");
         }
     }

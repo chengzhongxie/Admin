@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 namespace MvcClient
 {
@@ -40,11 +41,22 @@ namespace MvcClient
             {
                 opend.SignInScheme = "Cookies";
                 opend.Authority = "http://localhost:5000";
-                opend.RequireHttpsMetadata = false;
+                opend.RequireHttpsMetadata = false;             
 
                 opend.ClientId = "MVC";
                 opend.ClientSecret = "secret";
                 opend.SaveTokens = true;
+
+                opend.GetClaimsFromUserInfoEndpoint = true;
+                opend.ClaimActions.MapJsonKey("sub", "sub");
+                opend.ClaimActions.MapJsonKey("preferred_username", "preferred_username");
+                opend.ClaimActions.MapJsonKey("avatar", "avatar");
+                opend.ClaimActions.MapCustomJson("role", jobj => jobj["role"].ToString());
+
+                //opend.ResponseType = OpenIdConnectResponseType.CodeIdToken;
+                //opend.Scope.Add("offline_access");
+                //opend.Scope.Add("openid");
+                //opend.Scope.Add("profile");
             });
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);

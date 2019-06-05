@@ -17,10 +17,10 @@ namespace Admin
         public static void Main(string[] args)
         {
             CreateWebHostBuilder(args).Build()
-            //    .MigratDbContext<ApplicationDbContext>((contex, serverPropert) =>
-            //{
-            //    new ApplicationDbContextSeed().SeedAsync(contex, serverPropert).Wait();
-            //})
+                .MigratDbContext<ApplicationDbContext>((contex, serverPropert) =>
+            {
+                new ApplicationDbContextSeed().SeedAsync(contex, serverPropert).Wait();
+            })
             .Run();
         }
 

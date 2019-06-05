@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Admin.Models
+namespace Admin.ViewModels
 {
-    public class ConsentViewModel
+    public class ConsentViewModel : InputConsentViewModel
     {
         /// <summary>
         /// 
@@ -26,7 +26,9 @@ namespace Admin.Models
         /// <summary>
         /// 指定用户是否可以选择存储同意决策（默认为true）
         /// </summary>
-        public bool AllowRememberConsent { get; set; }
+        //public bool AllowRememberConsent { get; set; }
+
+        //public string ReturnUrl { get; set; }
 
         public IEnumerable<ScopenViewModel> IdentityScopes { get; set; }
         public IEnumerable<ScopenViewModel> ResourceScopes { get; set; }

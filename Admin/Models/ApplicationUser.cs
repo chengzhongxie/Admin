@@ -8,5 +8,9 @@ namespace Admin.Models
 {
     public class ApplicationUser : IdentityUser<Guid>
     {
+        /// <summary>
+        /// 头像
+        /// </summary>
+        public string Avatar { get; set; }
     }
 }
