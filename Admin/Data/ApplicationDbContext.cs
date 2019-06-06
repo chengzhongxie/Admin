@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Admin.Models;
+using IdentityServer4.EntityFramework.DbContexts;
 
 namespace Admin.Data
 {

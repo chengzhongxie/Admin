@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Admin.Data;
+using IdentityServer4.EntityFramework.DbContexts;
 
 namespace Admin
 {
@@ -20,7 +21,8 @@ namespace Admin
                 .MigratDbContext<ApplicationDbContext>((contex, serverPropert) =>
             {
                 new ApplicationDbContextSeed().SeedAsync(contex, serverPropert).Wait();
-            })
+            }).MigratDbContext<PersistedGrantDbContext>((contex,serverPropert)=> { })
+            .MigratDbContext<ConfigurationDbContext>((contex, serverPropert) => { })
             .Run();
         }
 

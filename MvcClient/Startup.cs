@@ -48,16 +48,16 @@ namespace MvcClient
                 opend.ClientSecret = "secret";
                 opend.SaveTokens = true;
 
-                opend.GetClaimsFromUserInfoEndpoint = true;
-                opend.ClaimActions.MapJsonKey("sub", "sub");
-                opend.ClaimActions.MapJsonKey("preferred_username", "preferred_username");
-                opend.ClaimActions.MapJsonKey("avatar", "avatar");
-                opend.ClaimActions.MapCustomJson("role", jobj => jobj["role"].ToString());
+                //opend.GetClaimsFromUserInfoEndpoint = true;
+                //opend.ClaimActions.MapJsonKey("sub", "sub");
+                //opend.ClaimActions.MapJsonKey("preferred_username", "preferred_username");
+                //opend.ClaimActions.MapJsonKey("avatar", "avatar");
+                //opend.ClaimActions.MapCustomJson("role", jobj => jobj["role"].ToString());
 
-                //opend.ResponseType = OpenIdConnectResponseType.CodeIdToken;
-                //opend.Scope.Add("offline_access");
-                //opend.Scope.Add("openid");
-                //opend.Scope.Add("profile");
+                opend.ResponseType = OpenIdConnectResponseType.CodeIdToken;
+                opend.Scope.Add("offline_access");
+                opend.Scope.Add("openid");
+                opend.Scope.Add("profile");
             });
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
